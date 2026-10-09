@@ -1,5 +1,7 @@
 """Authentication endpoints: register, login, refresh."""
 
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from jose import JWTError
 from sqlalchemy import select
@@ -8,15 +10,27 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from libs.exceptions import ConflictError, PermissionDeniedError
 
 from database import get_db
+from config import settings
 from models.user import User
 from schemas.auth import RegisterRequest, LoginRequest, RefreshRequest, TokenResponse, UserResponse
 from services.auth.password import hash_password, verify_password
 from services.auth.jwt import create_access_token, create_refresh_token, decode_token
+from services.auth.dependency import get_current_user
 
 router = APIRouter()
 
 
-@router.post("/register", response_model=UserResponse, status_code=201)
+def require_registration_enabled() -> None:
+    if not settings.auth_allow_registration:
+        raise HTTPException(status_code=403, detail="Registration is disabled")
+
+
+@router.post(
+    "/register",
+    response_model=UserResponse,
+    status_code=201,
+    dependencies=[Depends(require_registration_enabled)],
+)
 async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     """Register a new user with email and password."""
     # Check email uniqueness
@@ -32,6 +46,11 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     db.add(user)
     await db.commit()
     await db.refresh(user)
+    return UserResponse(id=str(user.id), email=user.email, name=user.name)
+
+
+@router.get("/me", response_model=UserResponse)
+async def current_user(user: User = Depends(get_current_user)):
     return UserResponse(id=str(user.id), email=user.email, name=user.name)
 
 
@@ -66,9 +85,10 @@ async def refresh(body: RefreshRequest, db: AsyncSession = Depends(get_db)):
     except (JWTError, ValueError, KeyError) as exc:
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token") from exc
 
-    user_id = payload.get("sub")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Invalid token: missing subject")
+    try:
+        user_id = uuid.UUID(payload["sub"])
+    except (ValueError, KeyError, TypeError) as exc:
+        raise HTTPException(status_code=401, detail="Invalid token subject") from exc
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if not user or not user.is_active:

@@ -8,6 +8,7 @@ import uuid
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from jose import JWTError
 from sqlalchemy import select
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -78,7 +79,7 @@ async def get_current_user(
         user_id = uuid.UUID(payload["sub"])
     except HTTPException:
         raise  # Re-raise specific HTTP errors (e.g. "Invalid token type") as-is
-    except (ValueError, KeyError) as e:
+    except (JWTError, ValueError, KeyError) as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",

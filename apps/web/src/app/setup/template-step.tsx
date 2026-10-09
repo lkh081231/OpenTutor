@@ -7,6 +7,7 @@ import type { BlockType } from "@/lib/block-system/types";
 
 const BLOCK_ICONS: Record<BlockType, typeof BookOpen> = {
   notes: FileText,
+  summary: FileText,
   quiz: HelpCircle,
   flashcards: Layers,
   progress: BarChart3,

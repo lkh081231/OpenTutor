@@ -21,6 +21,7 @@ export function DashboardSidebar({
         <span className="text-base font-bold text-foreground tracking-tight">OpenTutor</span>
       </div>
       <nav className="mt-3 flex flex-wrap gap-1 md:mt-2 md:flex-col">
+        <button type="button" onClick={() => onNavigate("/exam-practice")} className="px-3 py-2.5 rounded-xl text-sm text-left hover:bg-muted/60">刷题工作台</button>
         <span className="px-3 py-2.5 rounded-xl text-sm font-medium bg-brand-muted text-brand flex items-center gap-2">
           <Sparkles className="size-3.5" />
           {t("nav.dashboard")}

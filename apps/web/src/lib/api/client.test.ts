@@ -9,6 +9,7 @@ const mockBuildAuthHeaders = vi.fn((headers: Headers) => headers);
 // Mock auth module
 vi.mock("@/lib/auth", () => ({
   buildAuthHeaders: (headers: Headers) => mockBuildAuthHeaders(headers),
+  fetchWithAuth: (url: string, options: RequestInit) => fetch(url, options),
 }));
 
 function jsonResponse(data: unknown, status = 200): Response {

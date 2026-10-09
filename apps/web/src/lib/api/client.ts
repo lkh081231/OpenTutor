@@ -5,7 +5,7 @@
  */
 
 import { toast } from "sonner";
-import { buildAuthHeaders } from "@/lib/auth";
+import { buildAuthHeaders, fetchWithAuth } from "@/lib/auth";
 
 // In the browser, always use relative "/api" so requests go through the
 // Next.js rewrite (same origin, avoids CSP connect-src issues).
@@ -179,7 +179,7 @@ export async function request<T>(path: string, options?: RequestInit): Promise<T
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     try {
-      const res = await fetch(`${API_BASE}${path}`, {
+      const res = await fetchWithAuth(`${API_BASE}${path}`, {
         ...fetchOptions,
         signal: controller.signal,
       });
@@ -246,7 +246,7 @@ export async function requestBlob(path: string, options?: RequestInit): Promise<
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     try {
-      const res = await fetch(`${API_BASE}${path}`, {
+      const res = await fetchWithAuth(`${API_BASE}${path}`, {
         ...fetchOptions,
         signal: controller.signal,
       });

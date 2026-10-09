@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LocaleProvider } from "@/lib/i18n-context";
 import { ConnectionStatus } from "@/components/shared/connection-status";
+import { AuthGate } from "@/components/shared/auth-gate";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -62,7 +63,7 @@ export default function RootLayout({
           <LocaleProvider>
             <TooltipProvider>
               <main id="main-content">
-                {children}
+                <AuthGate>{children}</AuthGate>
               </main>
             </TooltipProvider>
             <Toaster />

@@ -55,6 +55,7 @@ class Settings(BaseSettings):
 
     # Authentication
     auth_enabled: bool = False
+    auth_allow_registration: bool = True
     deployment_mode: str = "single_user"  # single_user | multi_user
     jwt_secret_key: str = ""
     jwt_algorithm: str = "HS256"
