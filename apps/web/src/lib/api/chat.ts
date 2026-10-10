@@ -1,3 +1,4 @@
+import { fetchWithAuth } from "@/lib/auth";
 import { API_BASE, buildSecureRequestInit, request, type JsonObject } from "./client";
 
 // ── Chat types ──
@@ -229,7 +230,7 @@ export async function* streamChat(
 ): AsyncGenerator<StreamEvent, void, unknown> {
   // Avoid the trailing slash here: FastAPI may emit a 307 redirect for `/chat/`,
   // which causes the browser to follow the backend origin directly and trip CORS.
-  const res = await fetch(`${API_BASE}/chat`, {
+  const res = await fetchWithAuth(`${API_BASE}/chat`, {
     ...buildSecureRequestInit({
       method: "POST",
       includeJsonContentType: true,

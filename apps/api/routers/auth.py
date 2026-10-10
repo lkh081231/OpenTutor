@@ -2,7 +2,7 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from jose import JWTError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,7 +12,13 @@ from libs.exceptions import ConflictError, PermissionDeniedError
 from database import get_db
 from config import settings
 from models.user import User
-from schemas.auth import RegisterRequest, LoginRequest, RefreshRequest, TokenResponse, UserResponse
+from schemas.auth import (
+    RegisterRequest,
+    LoginRequest,
+    RefreshRequest,
+    TokenResponse,
+    UserResponse,
+)
 from services.auth.password import hash_password, verify_password
 from services.auth.jwt import create_access_token, create_refresh_token, decode_token
 from services.auth.dependency import get_current_user
@@ -83,7 +89,9 @@ async def refresh(body: RefreshRequest, db: AsyncSession = Depends(get_db)):
     except HTTPException:
         raise
     except (JWTError, ValueError, KeyError) as exc:
-        raise HTTPException(status_code=401, detail="Invalid or expired refresh token") from exc
+        raise HTTPException(
+            status_code=401, detail="Invalid or expired refresh token"
+        ) from exc
 
     try:
         user_id = uuid.UUID(payload["sub"])

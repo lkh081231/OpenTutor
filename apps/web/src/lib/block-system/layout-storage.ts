@@ -11,6 +11,7 @@ import type {
 
 const BLOCK_TYPES: readonly BlockType[] = [
   "notes",
+  "summary",
   "quiz",
   "flashcards",
   "progress",
@@ -35,6 +36,7 @@ const LEARNING_MODES: readonly LearningMode[] = [
 const BLOCK_DEFAULT_SIZES: Record<BlockType, BlockSize> = {
   chapter_list: "full",
   notes: "large",
+  summary: "small",
   quiz: "medium",
   flashcards: "medium",
   progress: "small",

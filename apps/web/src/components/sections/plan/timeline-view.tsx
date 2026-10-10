@@ -7,14 +7,9 @@ interface TimelineViewProps {
   courseId: string;
 }
 
-const URGENCY_COLORS = {
-  overdue: "bg-destructive text-destructive-foreground",
-  soon: "bg-warning text-warning-foreground",
-  normal: "bg-brand text-brand-foreground",
-  future: "bg-muted text-muted-foreground",
-};
+type Urgency = "overdue" | "soon" | "normal" | "future";
 
-function getUrgency(daysLeft: number): keyof typeof URGENCY_COLORS {
+function getUrgency(daysLeft: number): Urgency {
   if (daysLeft < 0) return "overdue";
   if (daysLeft <= 7) return "soon";
   if (daysLeft <= 30) return "normal";
@@ -29,15 +24,20 @@ function formatDaysLeft(daysLeft: number): string {
 }
 
 export function TimelineView({ courseId }: TimelineViewProps) {
-  const [goals, setGoals] = useState<StudyGoal[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [result, setResult] = useState<{ courseId: string; goals: StudyGoal[] } | null>(null);
+  const goals = useMemo(() => result?.goals ?? [], [result]);
+  const loading = result?.courseId !== courseId;
 
   useEffect(() => {
-    setLoading(true);
+    let cancelled = false;
     listStudyGoals(courseId)
-      .then((g) => setGoals(g))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .then((goals) => {
+        if (!cancelled) setResult({ courseId, goals });
+      })
+      .catch(() => {
+        if (!cancelled) setResult({ courseId, goals: [] });
+      });
+    return () => { cancelled = true; };
   }, [courseId]);
 
   const today = useMemo(() => new Date(), []);

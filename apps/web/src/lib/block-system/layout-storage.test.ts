@@ -60,6 +60,16 @@ describe("layout-storage", () => {
     expect(layout?.blocks[1].position).toBe(1);
   });
 
+  it("preserves summary blocks and repairs their missing size", () => {
+    const layout = parseSpaceLayout({ blocks: [{ id: "summary-1", type: "summary" }] });
+    expect(layout?.blocks).toHaveLength(1);
+    expect(layout?.blocks[0]).toMatchObject({ type: "summary", size: "small" });
+    saveStoredSpaceLayout("summary-course", layout!);
+    expect(loadStoredSpaceLayout("summary-course")?.blocks[0]).toMatchObject({
+      id: "summary-1", type: "summary", size: "small",
+    });
+  });
+
   it("round-trips persisted layouts through local storage", () => {
     saveStoredSpaceLayout("course-1", {
       templateId: null,
