@@ -27,7 +27,8 @@ SCHEMA_INIT_DETAIL = (
 def _is_missing_user_table(exc: ProgrammingError) -> bool:
     message = str(exc).lower()
     return (
-        'relation "users" does not exist' in message or "no such table: users" in message
+        'relation "users" does not exist' in message
+        or "no such table: users" in message
     )
 
 
@@ -77,6 +78,7 @@ async def get_current_user(
         )
 
     from services.auth.jwt import decode_token
+
     try:
         payload = decode_token(credentials.credentials)
         if payload.get("type") != "access":
