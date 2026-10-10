@@ -1,16 +1,16 @@
 """Authentication HTTP regressions without the unrelated application lifespan."""
+
 import uuid
 from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 import pytest_asyncio
+from config import settings
+from database import get_db
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 from jose import jwt
-
-from config import settings
-from database import get_db
 from models.user import User
 from routers.auth import router
 from services.auth.jwt import create_access_token, create_refresh_token
@@ -97,10 +97,9 @@ async def test_auth_disabled_keeps_original_single_user_mode(auth_client, monkey
 
 @pytest.mark.asyncio
 async def test_login_me_refresh_lifecycle_with_isolated_sqlite(monkeypatch):
+    from services.auth.password import hash_password
     from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
     from sqlalchemy.pool import StaticPool
-
-    from services.auth.password import hash_password
 
     monkeypatch.setattr(settings, "auth_enabled", True)
     monkeypatch.setattr(settings, "deployment_mode", "single_user")

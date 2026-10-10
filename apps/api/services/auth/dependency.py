@@ -18,12 +18,17 @@ from database import get_db
 from models.user import User
 
 security = HTTPBearer(auto_error=False)
-SCHEMA_INIT_DETAIL = "Database schema is not initialized. Run 'alembic upgrade head' before starting the API."
+SCHEMA_INIT_DETAIL = (
+    "Database schema is not initialized. "
+    "Run 'alembic upgrade head' before starting the API."
+)
 
 
 def _is_missing_user_table(exc: ProgrammingError) -> bool:
     message = str(exc).lower()
-    return 'relation "users" does not exist' in message or "no such table: users" in message
+    return (
+        'relation "users" does not exist' in message or "no such table: users" in message
+    )
 
 
 async def _execute_user_query(db: AsyncSession, query):
