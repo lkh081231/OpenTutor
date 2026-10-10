@@ -141,19 +141,26 @@ def image_resources(
 
 
 def comparable_body(block: str, *, mirror: bool) -> str | None:
-    """Remove exactly the known generated wrapper; all body whitespace matters."""
+    """Remove the known wrapper and apply only approved body newline equivalence.
+
+    CRLF/LF spelling and terminal CR/LF counts are comparison-only differences.
+    Never strip spaces: Markdown hard breaks and internal blank lines matter.
+    Source snapshots and their byte hashes are not changed by this function.
+    """
     lines = block.splitlines(keepends=True)
     if not lines:
         return None
     if not mirror:
-        return "".join(lines[1:])
-    if (
-        len(lines) < 3
-        or lines[1].strip()
-        or not MIRROR_NOTE.fullmatch(lines[2].rstrip("\r\n"))
-    ):
-        return None
-    return "".join(lines[3:])
+        body = "".join(lines[1:])
+    else:
+        if (
+            len(lines) < 3
+            or lines[1].strip()
+            or not MIRROR_NOTE.fullmatch(lines[2].rstrip("\r\n"))
+        ):
+            return None
+        body = "".join(lines[3:])
+    return body.replace("\r\n", "\n").rstrip("\r\n")
 
 
 def adapt_markdown(

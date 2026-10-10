@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 import sys
@@ -111,9 +112,84 @@ class BankPreviewTests(unittest.TestCase):
         self.assertEqual(first.mirrors[0].source.raw_markdown, mirrored())
         self.assertEqual(
             first.mirrors[0].source.source_sha256,
-            __import__("hashlib").sha256(mirrored().encode()).hexdigest(),
+            hashlib.sha256(mirrored().encode()).hexdigest(),
         )
         self.assertEqual(metadata_report(first), metadata_report(self.preview()))
+
+    def test_mirror_newline_equivalence_preserves_snapshots_hashes_and_idempotence(
+        self,
+    ):
+        for canonical_crlf, mirror_crlf in ((False, True), (True, False)):
+            with self.subTest(canonical_crlf=canonical_crlf):
+                source = canonical() + "\n\n"
+                copy = mirrored().rstrip("\n")
+                if canonical_crlf:
+                    source = source.replace("\n", "\r\n")
+                if mirror_crlf:
+                    copy = copy.replace("\n", "\r\n") + "\r\n"
+                source_path = self.write(
+                    "passyear/extracted/ch01-a/9701_s25_21.md", source
+                )
+                mirror_path = self.write(
+                    "passyear/extracted/ch02-b/9701_s25_21.md", copy
+                )
+                preview = self.preview()
+                self.assertEqual((len(preview.questions), len(preview.mirrors)), (1, 1))
+                self.assertEqual(len(preview.unresolved_mirrors), 0)
+                self.assertEqual(preview.questions[0].raw_markdown, source)
+                self.assertEqual(preview.mirrors[0].source.raw_markdown, copy)
+                for record, original, file_path in (
+                    (preview.questions[0], source, source_path),
+                    (preview.mirrors[0].source, copy, mirror_path),
+                ):
+                    self.assertEqual(
+                        record.source_sha256,
+                        hashlib.sha256(original.encode()).hexdigest(),
+                    )
+                    self.assertEqual(file_path.read_bytes(), original.encode())
+                    self.assertTrue(record.preview_only)
+                    self.assertEqual(record.purpose, "unassigned")
+                    self.assertFalse(record.student_view_eligible)
+                self.assertNotEqual(
+                    preview.questions[0].source_sha256,
+                    preview.mirrors[0].source.source_sha256,
+                )
+                self.assertEqual(
+                    metadata_report(preview), metadata_report(self.preview())
+                )
+
+    def test_newline_equivalence_keeps_text_spaces_hard_breaks_and_internal_lines_significant(
+        self,
+    ):
+        cases = {
+            "text": BODY.replace("equivalent", "different"),
+            "one_trailing_space": BODY.replace(
+                "Synthetic prompt H₂O $x^2$.", "Synthetic prompt H₂O $x^2$. "
+            ),
+            "hard_break": BODY.replace(
+                "Synthetic prompt H₂O $x^2$.", "Synthetic prompt H₂O $x^2$.  "
+            ),
+            "terminal_content_spaces": BODY.rstrip("\n") + "  \n",
+            "internal_blank_line": BODY.replace(
+                "Shared synthetic premise.\n", "Shared synthetic premise.\n\n"
+            ),
+            "internal_bare_cr": BODY.replace(
+                "Shared synthetic premise.\n", "Shared synthetic premise.\r"
+            ),
+        }
+        for name, changed_body in cases.items():
+            with self.subTest(change=name):
+                self.write(
+                    "passyear/extracted/ch01-a/9701_s25_21.md", canonical() + "\n\n"
+                )
+                self.write(
+                    "passyear/extracted/ch02-b/9701_s25_21.md",
+                    mirrored(body=changed_body).replace("\n", "\r\n"),
+                )
+                preview = self.preview()
+                self.assertEqual(len(preview.mirrors), 0)
+                self.assertEqual(len(preview.unresolved_mirrors), 1)
+                self.assertIn("mirror_content_conflict", self.codes(preview))
 
     def test_same_year_question_different_component_never_merges(self):
         for ref in ("9701_s25_21", "9701_s25_22", "9701_w25_21"):
