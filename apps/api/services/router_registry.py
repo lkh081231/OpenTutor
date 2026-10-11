@@ -13,6 +13,7 @@ from routers import (
     chat,
     courses,
     export,
+    exam_bank,
     flashcards,
     goals,
     health,
@@ -32,6 +33,7 @@ from routers import (
 
 
 CORE_ROUTERS = (
+    (exam_bank.router, "/api/exam-banks", ["exam-banks"]),
     (health.router, "/api", ["health"]),
     (upload.router, "/api/content", ["content"]),
     (chat.router, "/api/chat", ["chat"]),
@@ -56,7 +58,9 @@ CORE_ROUTERS = (
 )
 
 
-def _include_router(app: FastAPI, router, prefix: str | None = None, tags: list[str] | None = None) -> None:
+def _include_router(
+    app: FastAPI, router, prefix: str | None = None, tags: list[str] | None = None
+) -> None:
     kwargs = {}
     if prefix is not None:
         kwargs["prefix"] = prefix

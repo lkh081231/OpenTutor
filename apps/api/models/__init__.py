@@ -24,8 +24,22 @@ from models.notification import Notification
 from models.cognitive_baseline import CognitiveBaseline
 from models.usage_event import UsageEvent
 from models.intervention_outcome import InterventionOutcome
+from models.exam_bank import (
+    ExamBank,
+    ExamBankImport,
+    ExamQuestion,
+    ExamQuestionVersion,
+    ExamImportQuestion,
+    ExamResource,
+)
 
 __all__ = [
+    "ExamBank",
+    "ExamBankImport",
+    "ExamQuestion",
+    "ExamQuestionVersion",
+    "ExamImportQuestion",
+    "ExamResource",
     "User",
     "Course",
     "CourseContentTree",
