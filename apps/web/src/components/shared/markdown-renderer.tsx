@@ -5,10 +5,16 @@ import DOMPurify from "dompurify";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
-import { buildMermaidFallbackText, stabilizeMermaidCode } from "@/lib/markdown/mermaid";
+import remarkGfm from "remark-gfm";
+import type { Components } from "react-markdown";
+import { remarkSafeSubscripts } from "@/lib/markdown/safe-subscripts";
+import {
+  buildMermaidFallbackText,
+  stabilizeMermaidCode,
+} from "@/lib/markdown/mermaid";
 import "katex/dist/katex.min.css";
 
-type MermaidInstance = typeof import("mermaid")["default"];
+type MermaidInstance = (typeof import("mermaid"))["default"];
 
 let mermaidLoader: Promise<MermaidInstance> | null = null;
 
@@ -27,7 +33,10 @@ function getMermaid() {
 }
 
 function createMermaidRenderId(): string {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
     return `mermaid-${crypto.randomUUID()}`;
   }
   return `mermaid-${Math.random().toString(36).slice(2, 10)}`;
@@ -85,7 +94,9 @@ function MermaidBlock({ code }: { code: string }) {
           <p className="mb-2 text-xs font-medium text-muted-foreground">
             Diagram preview unavailable. Showing a text outline instead.
           </p>
-          <pre className="whitespace-pre-wrap text-sm text-foreground">{fallbackText}</pre>
+          <pre className="whitespace-pre-wrap text-sm text-foreground">
+            {fallbackText}
+          </pre>
         </div>
       </div>
     );
@@ -103,29 +114,55 @@ function MermaidBlock({ code }: { code: string }) {
 interface MarkdownRendererProps {
   content: string;
   className?: string;
+  examPreview?: boolean;
+  imageComponent?: Components["img"];
 }
 
 export function MarkdownRenderer({
   content,
   className,
+  examPreview = false,
+  imageComponent,
 }: MarkdownRendererProps) {
   return (
     <div role="article" className={className}>
       <ReactMarkdown
-        remarkPlugins={[remarkMath]}
+        remarkPlugins={
+          examPreview
+            ? [remarkMath, remarkGfm, remarkSafeSubscripts]
+            : [remarkMath]
+        }
         rehypePlugins={[rehypeKatex]}
         components={{
+          ...(examPreview
+            ? {
+                img:
+                  imageComponent ??
+                  (() => <span role="note">图片未提供，已阻止外部资源。</span>),
+                a: ({ children }: { children?: React.ReactNode }) => (
+                  <span>{children}</span>
+                ),
+                pre: ({ children }: { children?: React.ReactNode }) => (
+                  <div>{children}</div>
+                ),
+              }
+            : {}),
           code({ className: codeClassName, children, ...props }) {
             const match = /language-(\w+)/.exec(codeClassName || "");
             const language = match?.[1];
 
-            if (language === "mermaid") {
+            if (language === "mermaid" && !examPreview) {
               return <MermaidBlock code={String(children).trim()} />;
             }
 
             if (language) {
               return (
                 <pre className="my-2 overflow-x-auto rounded-xl bg-muted/30 p-3.5 text-sm">
+                  {examPreview && (
+                    <span className="mb-2 block text-xs text-muted-foreground">
+                      {language} 源码；此图形或代码未渲染。
+                    </span>
+                  )}
                   <code className={codeClassName} {...props}>
                     {children}
                   </code>
@@ -134,7 +171,10 @@ export function MarkdownRenderer({
             }
 
             return (
-              <code className="rounded-md bg-muted/30 px-1 py-0.5 text-sm" {...props}>
+              <code
+                className="rounded-md bg-muted/30 px-1 py-0.5 text-sm"
+                {...props}
+              >
                 {children}
               </code>
             );
@@ -156,7 +196,9 @@ export function MarkdownRenderer({
             );
           },
           td({ children }) {
-            return <td className="border border-border/60 px-3 py-2">{children}</td>;
+            return (
+              <td className="border border-border/60 px-3 py-2">{children}</td>
+            );
           },
         }}
       >
